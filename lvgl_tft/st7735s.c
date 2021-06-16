@@ -18,7 +18,6 @@
  *      DEFINES
  *********************/
  #define TAG "ST7735S"
- #define AXP192_I2C_ADDRESS                    0x34
 
 /**********************
  *      TYPEDEFS
@@ -38,11 +37,15 @@ static void st7735s_send_cmd(uint8_t cmd);
 static void st7735s_send_data(void * data, uint16_t length);
 static void st7735s_send_color(void * data, uint16_t length);
 static void st7735s_set_orientation(uint8_t orientation);
+
+#ifdef CONFIG_LV_M5STICKC_HANDLE_AXP192
+#define AXP192_I2C_ADDRESS                    0x34
 static void i2c_master_init();
 static void axp192_write_byte(uint8_t addr, uint8_t data);
 static void axp192_init();
 static void axp192_sleep_in();
 static void axp192_sleep_out();
+#endif
 
 /**********************
  *  STATIC VARIABLES
@@ -218,6 +221,7 @@ static void st7735s_set_orientation(uint8_t orientation)
     st7735s_send_data((void *) &data[orientation], 1);
 }
 
+#ifdef CONFIG_LV_M5STICKC_HANDLE_AXP192
 static void i2c_master_init()
 {
 	i2c_config_t i2c_config = {
@@ -270,3 +274,4 @@ static void axp192_sleep_out()
 {
 	axp192_write_byte(0x12, 0x4d);
 }
+#endif
