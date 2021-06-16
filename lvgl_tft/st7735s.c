@@ -166,12 +166,18 @@ void st7735s_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * col
 void st7735s_sleep_in()
 {
 	st7735s_send_cmd(0x10);
+
+#ifdef CONFIG_LV_M5STICKC_HANDLE_AXP192
 	axp192_sleep_in();
+#endif
 }
 
 void st7735s_sleep_out()
 {
+#ifdef CONFIG_LV_M5STICKC_HANDLE_AXP192
 	axp192_sleep_out();
+#endif
+
 	st7735s_send_cmd(0x11);
 }
 
