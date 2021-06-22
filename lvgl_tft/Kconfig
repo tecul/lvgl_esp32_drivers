@@ -50,7 +50,7 @@ menu "LVGL TFT Display controller"
         config LV_PREDEFINED_DISPLAY_WEMOS_LOLIN
             bool "Wemos Lolin OLED"
             select LV_TFT_DISPLAY_CONTROLLER_SSD1306
-            select LV_TFT_DISPLAY_PROTOCOL_I2C
+            select LV_I2C_DISPLAY
             select LV_TFT_DISPLAY_MONOCHROME
             select LV_THEME_MONO
         config LV_PREDEFINED_DISPLAY_ATAG
@@ -187,7 +187,7 @@ menu "LVGL TFT Display controller"
         help
             Display controller protocol SPI
 
-    config LV_TFT_DISPLAY_PROTOCOL_I2C
+    config LV_I2C_DISPLAY
         bool
         help
             Display controller protocol I2C
@@ -311,7 +311,7 @@ menu "LVGL TFT Display controller"
         config LV_TFT_DISPLAY_USER_CONTROLLER_SSD1306
             bool "SSD1306"
             select LV_TFT_DISPLAY_CONTROLLER_SSD1306
-            select LV_TFT_DISPLAY_PROTOCOL_I2C
+            select LV_I2C_DISPLAY
             select LV_TFT_DISPLAY_MONOCHROME
         config LV_TFT_DISPLAY_USER_CONTROLLER_FT81X
             bool "FT81X"
@@ -503,18 +503,6 @@ menu "LVGL TFT Display controller"
             depends on LV_TFT_DISPLAY_SPI_TRANS_MODE_SIO
     endchoice
 
-    choice
-        prompt "Display I2C port" if LV_TFT_DISPLAY_PROTOCOL_I2C
-        default LV_DISPLAY_I2C_PORT_0
-        help
-            Select the I2C port used by the display controller.
-
-        config LV_DISPLAY_I2C_PORT_0
-            bool "I2C PORT 0"
-        config LV_DISPLAY_I2C_PORT_1
-            bool "I2C PORT 1"
-    endchoice
-
     config LV_TFT_USE_CUSTOM_SPI_CLK_DIVIDER
         bool "Use custom SPI clock frequency." if LV_TFT_DISPLAY_PROTOCOL_SPI
         default n
@@ -592,6 +580,16 @@ menu "LVGL TFT Display controller"
         default 80 if LV_TFT_SPI_CLK_DIVIDER_80
         default 2
 
+    config LV_M5STICKC_HANDLE_AXP192
+        bool "Handle Backlight and TFT power for M5StickC using AXP192." if LV_PREDEFINED_DISPLAY_M5STICKC || LV_TFT_DISPLAY_CONTROLLER_ST7735S
+        default y if LV_PREDEFINED_DISPLAY_M5STICKC
+        select LV_I2C_DISPLAY
+        help
+            Display and TFT power supply on M5StickC is controlled using an
+            AXP192 Power Mangerment IC. Select yes if you want to enable TFT IC
+            (LDO3) and backlight power using AXP192 by LVGL, or select no if you
+            want to take care of power management in your own code.
+
     config LV_INVERT_DISPLAY
         bool "IN DEPRECATION - Invert display." if LV_TFT_DISPLAY_CONTROLLER_RA8875
         default n
@@ -605,31 +603,6 @@ menu "LVGL TFT Display controller"
             If the colors look inverted on your display, try enabling this.
             If it didn't help try LVGL configuration -> Swap the 2 bytes of RGB565 color.
 
-    config LV_M5STICKC_HANDLE_AXP192
-        bool "Handle Backlight and TFT power for M5StickC using AXP192." if LV_PREDEFINED_DISPLAY_M5STICKC || LV_TFT_DISPLAY_CONTROLLER_ST7735S
-        default y if LV_PREDEFINED_DISPLAY_M5STICKC
-        help
-            Display and TFT power supply on M5StickC is controlled using an AXP192 Power Mangerment IC.
-            Select yes if you want to enable TFT IC (LDO3) and backlight power using AXP192 by LVGL, or select no if you want to take care of
-            power management in your own code.
-
-    config LV_AXP192_PIN_SDA
-        int "GPIO for AXP192 I2C SDA"
-        depends on LV_M5STICKC_HANDLE_AXP192
-        range 0 39
-        default 21 if LV_PREDEFINED_DISPLAY_M5STICKC
-        default 21
-        help
-            Configure the AXP192 I2C SDA pin here.
-
-    config LV_AXP192_PIN_SCL
-        int "GPIO for AXP192 I2C SCL"
-        depends on LV_M5STICKC_HANDLE_AXP192
-        range 0 39
-        default 22 if LV_PREDEFINED_DISPLAY_M5STICKC
-        default 22
-        help
-            Configure the AXP192 I2C SDA pin here.
 
     # menu will be visible only when LV_PREDEFINED_DISPLAY_NONE is y
     menu "Display RA8875 Configuration"
@@ -1024,30 +997,33 @@ menu "LVGL TFT Display controller"
             help
                 Configure the display BCLK (LED) pin here.
 
-        config LV_DISP_PIN_SDA
-            int "GPIO for I2C SDA" if LV_TFT_DISPLAY_PROTOCOL_I2C
-            range 0 39 if IDF_TARGET_ESP32
-            range 0 43 if IDF_TARGET_ESP32S2
-            range 0 21 if IDF_TARGET_ESP32C3
-
-            default 5 if LV_PREDEFINED_DISPLAY_WEMOS_LOLIN
-            default 5
-
-            help
-            Configure the I2C SDA pin here.
-
-        config LV_DISP_PIN_SCL
-            int "GPIO for I2C SCL" if LV_TFT_DISPLAY_PROTOCOL_I2C
-            range 0 39 if IDF_TARGET_ESP32
-            range 0 43 if IDF_TARGET_ESP32S2
-            range 0 21 if IDF_TARGET_ESP32C3
-
-            default 4 if LV_PREDEFINED_DISPLAY_WEMOS_LOLIN
-            default 4
-
-            help
-            Configure the I2C SCL pin here.
-
     endmenu
 
+    choice
+        prompt "Select an I2C port for the display"
+        default LV_I2C_DISPLAY_PORT_0
+        depends on LV_I2C_DISPLAY
+
+        config LV_I2C_DISPLAY_PORT_0
+            bool
+            prompt "I2C port 0"
+
+        config LV_I2C_DISPLAY_PORT_1
+            bool
+            prompt "I2C port 1"
+
+    endchoice
+
+    config LV_I2C
+        bool
+        default y if LV_I2C_DISPLAY
+
+    config LV_I2C_DISPLAY_PORT
+        int
+        default 1 if LV_I2C_DISPLAY_PORT_1
+        default 0
+
 endmenu
+
+
+
