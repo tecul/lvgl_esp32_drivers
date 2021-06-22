@@ -140,14 +140,21 @@ void lvgl_driver_init(void)
 }
 
 
-/* Initialize spi bus master */
+/* Initialize spi bus master 
+ *
+ * NOTE: dma_chan variable type and value set to int instead of spi_dma_chan_t
+ * for backwards compatibility with ESP-IDF versions prior v4.3.
+ *
+ * We could use the ESP_IDF_VERSION_VAL macro available in the
+ * "esp_idf_version.h" header available since ESP-IDF v4.
+ */
 bool lvgl_spi_driver_init(int host,
     int miso_pin, int mosi_pin, int sclk_pin,
     int max_transfer_sz,
     int dma_channel,
     int quadwp_pin, int quadhd_pin)
 {
-    spi_dma_chan_t dma_chan = SPI_DMA_DISABLED;
+    int dma_chan = 0;
 
 #if defined (CONFIG_IDF_TARGET_ESP32)
     assert((SPI_HOST <= host) && (VSPI_HOST >= host));
@@ -169,7 +176,7 @@ bool lvgl_spi_driver_init(int host,
         "SPI1_HOST", "SPI2_HOST", "SPI3_HOST"
     };
 
-    dma_chan = SPI_DMA_CH_AUTO;
+    dma_chan = 3 /* SPI_DMA_CH_AUTO */;
 #else
 #error "Target chip not selected"
 #endif
